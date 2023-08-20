@@ -165,6 +165,23 @@ def print_table(column_names, rows, title=None):
     rich_console.print(table)
 
 
+def print_command_list(command_list):
+    """Function for printing a command list."""
+
+    command_print_style = "white"
+
+    # Print the command usages with prettyprinter and style
+    pprint("[bold underline]Commands:[/]", style=command_print_style)
+    for command, (arguments, description) in command_list.items():
+        print("")
+        pprint(
+            f"[bold]'{command}'[/] {arguments}\n{description}",
+            style=command_print_style,
+        )
+
+    print("")
+
+
 def get_general_user_input(prompt):
     """Function for getting general user input."""
 

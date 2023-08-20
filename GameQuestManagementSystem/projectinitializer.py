@@ -8,6 +8,10 @@ import dbmanager
 import prettyIO as pio
 
 DATABASE_NAME = "gameprogresstrackerdb"
+DUMMY_DATA_NAME = "TableDummyData.sql"
+LARGE_DUMMY_DATA_NAME = "TableDummyDataLarger.sql"
+PROCEDURES_NAME = "Procedures.sql"
+TRIGGERS_NAME = "Triggers.sql"
 
 
 def initialize_mysql_connection():
@@ -21,14 +25,16 @@ def initialize_mysql_connection():
         username = pio.get_general_user_input("Enter your username:")
 
         # Get password from user
-        password = pio.get_general_user_input("Enter your password:")
+        password = pio.get_general_user_input(
+            "Enter your password (in memory only for lifetime of application):"
+        )
 
         # Connect to the database
         database = dbmanager.connect_to_mysql_database(host_name, username, password)
         if database is None:
             return None
 
-        cursor = database.cursor()
+        cursor = database.cursor(dictionary=True)
 
         # Return the database object
         return (database, cursor)
@@ -175,31 +181,86 @@ def initialize_tables(cursor):
     return result
 
 
+def populate_tables(cursor):
+    """Function for populating the tables with dummy data"""
+
+    result = dbmanager.execute_sql_file(cursor, "../" + LARGE_DUMMY_DATA_NAME)
+
+    if result:
+        pio.print_success("Tables populated successfully.")
+    else:
+        pio.print_error("Some tables failed to be populated.")
+
+    return result
+
+
+def add_procedures_and_triggers(cursor):
+    """Function for adding the procedures and triggers to the database"""
+
+    result = True
+
+    # Add procedures
+    result &= dbmanager.execute_sql_file(cursor, "../" + PROCEDURES_NAME)
+
+    # Add triggers
+    result &= dbmanager.execute_sql_file(cursor, "../" + TRIGGERS_NAME)
+
+    if result:
+        pio.print_success("Procedures and triggers added successfully.")
+    else:
+        pio.print_error("Some procedures and triggers failed to be added.")
+
+    return result
+
+
 def init():
     """Function for initializing the project"""
 
-    # Initialize the database connection
-    (database_cnx, cursor) = initialize_mysql_connection()
-    if database_cnx is None:
-        return None
-
-    if pio.get_yes_no_input("Do you want to initialize the schema?"):
-        # Create the database
-        if not dbmanager.create_schema(cursor, DATABASE_NAME):
-            return None
-    else:
-        pio.print_info("Skipping schema initialization.")
-
-    # Select the database
+    result = initialize_mysql_connection()
+    (database_cnx, cursor) = result
     dbmanager.use_database(cursor, DATABASE_NAME)
 
-    if pio.get_yes_no_input("Do you want to initialize the tables?"):
-        # Create the tables if they don't exist
-        if not initialize_tables(cursor):
-            return False
-    else:
-        pio.print_info("Skipping table initialization.")
+    # Deprecated code. Left for reference.
+    if False:
+        if not pio.get_yes_no_input(
+            "Do you want to initialize the database? This should always be done on first run."
+        ):
+            pio.print_info("Skipping database initialization.")
+            return True
 
-    # Commit all changes
-    dbmanager.commit(database_cnx)
+        if pio.get_yes_no_input("Do you want to initialize the schema?"):
+            # Create the database
+            if not dbmanager.create_schema(cursor, DATABASE_NAME):
+                pio.print_error("Failed to create the database.")
+                return False
+        else:
+            pio.print_info("Skipping schema initialization.")
+
+        # Select the database
+        dbmanager.use_database(cursor, DATABASE_NAME)
+
+        if pio.get_yes_no_input("Do you want to initialize the tables?"):
+            # Create the tables if they don't exist
+            if not initialize_tables(cursor):
+                return False
+        else:
+            pio.print_info("Skipping table initialization.")
+
+        if pio.get_yes_no_input("Do you want to populate the tables?"):
+            # Populate the tables
+            if not populate_tables(cursor):
+                return False
+        else:
+            pio.print_info("Skipping table population.")
+
+        if pio.get_yes_no_input("Do you want to add the procedures and triggers?"):
+            # Add the procedures and triggers
+            if not add_procedures_and_triggers(cursor):
+                return False
+        else:
+            pio.print_info("Skipping procedure and trigger addition.")
+
+        # Commit all changes
+        dbmanager.commit(database_cnx)
+
     return (database_cnx, cursor)

@@ -100,6 +100,8 @@ def _handle_query_warnings(cursor):
     if warning_results:
         warning_content = _collect_rows(warning_results)
         pio.print_error_panel("MySQL Warnings", warning_content)
+    else:
+        pio.print_success("Executed query without warnings.")
 
 
 def connect_to_mysql_database(host, user, password):
@@ -157,6 +159,7 @@ def print_db_dict_output(cursor):
     column_names = cursor.column_names
     # Extract rows from results dictionary
     rows = []
+
     for row in query_results_dict:
         rows.append(list(row.values()))
 
@@ -209,87 +212,113 @@ def execute_many_query(cursor, query, values, also_print=False):
     return _execute_query_general(cursor, query, should_exec_many, values, also_print)
 
 
-def generate_dummy_data(cursor, table_name, num_rows):
-    """Function for generating dummy data for a table"""
+def execute_procedure(cursor, procedure_name, args=None, also_print=False):
+    """Function for executing a stored procedure on the database."""
 
-    # Check if num_rows is a valid integer
-    if not num_rows.isdigit():
-        pio.print_error("Number of rows must be an integer.")
-        return
-
-    num_rows = int(num_rows)
-    # Check if num_rows is within range
-    if num_rows < 1 or num_rows > MAX_DUMMY_ROWS:
-        pio.print_error(f"Number of rows must be between 1 and {MAX_DUMMY_ROWS}.")
-        return
-
-    # Get the table description
     try:
-        execute_query(cursor, f"DESCRIBE {table_name}")
-        table_desc = _collect_rows(cursor.fetchall())
+        # Change command message depending on if it is a 'many' query
+        command_text = "Executing procedure"
+        pio.print_command(command_text, procedure_name)
 
-        columns = [
-            column
-            for column in _parse_table_description(table_desc)
-            if not (column.is_primary_key and "auto_increment" in column.extra_info)
-        ]
+        if args is None:
+            cursor.callproc(procedure_name)
+        else:
+            cursor.callproc(procedure_name, args)
 
-        # Get the column names
-        column_names = [column.name for column in columns]
+        if also_print:
+            print_db_dict_output(cursor)
 
-        # Get the column types
-        column_types = [column.data_type for column in columns]
+        _handle_query_warnings(cursor)
 
-        # Generate the dummy data
-        fake = Faker()
-        row_values = []
-        for _ in range(num_rows):
-            # Generate the values
-            values = []
-            for i in range(len(column_names)):
-                column_type = column_types[i]
-
-                if column_type == "int":
-                    values.append(fake.pyint())
-                elif column_type.startswith("varchar"):
-                    values.append(
-                        fake.pystr(max_chars=_get_varchar_length(column_type))
-                    )
-                elif column_type == "tinytext":
-                    values.append(fake.text(max_nb_chars=255))
-                elif column_type == "date":
-                    values.append(fake.date())
-                elif column_type == "datetime":
-                    values.append(fake.date_time())
-                elif column_type == "float":
-                    values.append(fake.pyfloat())
-                elif column_type == "tinyint":
-                    values.append(fake.pyint())
-                elif column_type == "text":
-                    values.append(fake.text())
-                else:
-                    pio.print_error(f"Unknown type '{column_type}'. Aborting...")
-                    return
-
-            # Transform the values into a tuple
-            row_values.append(tuple(values))
-
-        # Generate the query
-        column_names_str = ",".join(column_names)  # column names separated by commas
-        values_str = ",".join(["%s"] * len(column_names))  # %s for each column
-        query_statment = (
-            f"INSERT INTO {table_name} ({column_names_str}) VALUES ({values_str})"
-        )
-
-        # Execute the query as a 'many' query for efficiency
-        execute_many_query(cursor, query_statment, row_values)
-
-        pio.print_success(
-            f"Generated {num_rows} rows of dummy data for table {table_name}."
-        )
+        return True
 
     except Exception as err:
-        pio.print_exception_info("Failed To Generate Dummy Data", err)
+        error_text = "Failed SQL Procedure"
+        pio.print_exception_info(error_text, err)
+        return False
+
+
+# def generate_dummy_data(cursor, table_name, num_rows):
+#    """Function for generating dummy data for a table"""
+#
+#    # Check if num_rows is a valid integer
+#    if not num_rows.isdigit():
+#        pio.print_error("Number of rows must be an integer.")
+#        return
+#
+#    num_rows = int(num_rows)
+#    # Check if num_rows is within range
+#    if num_rows < 1 or num_rows > MAX_DUMMY_ROWS:
+#        pio.print_error(f"Number of rows must be between 1 and {MAX_DUMMY_ROWS}.")
+#        return
+#
+#    # Get the table description
+#    try:
+#        execute_query(cursor, f"DESCRIBE {table_name}")
+#        table_desc = _collect_rows(cursor.fetchall())
+#
+#        columns = [
+#            column
+#            for column in _parse_table_description(table_desc)
+#            if not (column.is_primary_key and "auto_increment" in column.extra_info)
+#        ]
+#
+#        # Get the column names
+#        column_names = [column.name for column in columns]
+#
+#        # Get the column types
+#        column_types = [column.data_type for column in columns]
+#
+#        # Generate the dummy data
+#        fake = Faker()
+#        row_values = []
+#        for _ in range(num_rows):
+#            # Generate the values
+#            values = []
+#            for i in range(len(column_names)):
+#                column_type = column_types[i]
+#
+#                if column_type == "int":
+#                    values.append(fake.pyint())
+#                elif column_type.startswith("varchar"):
+#                    values.append(
+#                        fake.pystr(max_chars=_get_varchar_length(column_type))
+#                    )
+#                elif column_type == "tinytext":
+#                    values.append(fake.text(max_nb_chars=255))
+#                elif column_type == "date":
+#                    values.append(fake.date())
+#                elif column_type == "datetime":
+#                    values.append(fake.date_time())
+#                elif column_type == "float":
+#                    values.append(fake.pyfloat())
+#                elif column_type == "tinyint":
+#                    values.append(fake.pyint())
+#                elif column_type == "text":
+#                    values.append(fake.text())
+#                else:
+#                    pio.print_error(f"Unknown type '{column_type}'. Aborting...")
+#                    return
+#
+#            # Transform the values into a tuple
+#            row_values.append(tuple(values))
+#
+#        # Generate the query
+#        column_names_str = ",".join(column_names)  # column names separated by commas
+#        values_str = ",".join(["%s"] * len(column_names))  # %s for each column
+#        query_statment = (
+#            f"INSERT INTO {table_name} ({column_names_str}) VALUES ({values_str})"
+#        )
+#
+#        # Execute the query as a 'many' query for efficiency
+#        execute_many_query(cursor, query_statment, row_values)
+#
+#        pio.print_success(
+#            f"Generated {num_rows} rows of dummy data for table {table_name}."
+#        )
+#
+#    except Exception as err:
+#        pio.print_exception_info("Failed To Generate Dummy Data", err)
 
 
 def create_schema(cursor, schema_name):
@@ -355,6 +384,30 @@ def execute_sql_file(cursor, sql_file_name):
         [line for line in sql_file.split("\n") if not line.strip().startswith("--")]
     )
 
+    # Tested solution for handling extra delimiters. Not functional or done.
+    # sql_commands = []
+    #
+    # current_delimiter = ";"
+    # current_command = ""
+    # for line in sql_file.split("\n"):
+    #    line = line.strip()
+    #
+    #    if line == "":
+    #        continue
+    #
+    #    if line.startswith("DELIMITER"):
+    #        current_delimiter = line.split(" ")[1]
+    #        continue
+    #
+    #    if line.endswith(current_delimiter):
+    #        if current_delimiter != ";":
+    #            # Remove delimiter from the end of the line (if it's not ';')
+    #            line = line[: -len(current_delimiter)]
+    #
+    #        sql_commands.append(current_command)
+    #        current_command = ""
+    #        continue
+
     # Split all SQL commands (split on ';'). Also remove whitespace and empty strings
     sql_commands = [
         command.strip() for command in sql_file.split(";") if command.strip() != ""
@@ -364,8 +417,8 @@ def execute_sql_file(cursor, sql_file_name):
     for query in sql_commands:
         result = execute_query(cursor, query)
         if not result:
-            pio.print_error("Failed to execute SQL file.")
+            pio.print_error("Failed to execute SQL file '" + sql_file_name + "'.")
             return False
 
-    pio.print_success("SQL file executed successfully.")
+    pio.print_success("SQL file '" + sql_file_name + "' executed successfully.")
     return True

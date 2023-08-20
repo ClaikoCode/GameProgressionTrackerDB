@@ -13,8 +13,7 @@ def get_player_achievements(cursor, player_id):
         WHERE PA.PlayerID = %s;
     """
 
-    result = dbmanager.execute_query(cursor, sql_query, (player_id,))
-    dbmanager.print_db_output(cursor)
+    result = dbmanager.execute_query(cursor, sql_query, (player_id,), also_print=True)
 
     return result
 
@@ -27,8 +26,7 @@ def get_total_playtime(cursor):
         FROM Player;
     """
 
-    result = dbmanager.execute_query(cursor, sql_query)
-    dbmanager.print_db_output(result)
+    result = dbmanager.execute_query(cursor, sql_query, also_print=True)
 
     return result
 
@@ -39,11 +37,11 @@ def get_avg_items_collected(cursor):
     sql_query = """
         SELECT LevelsCompleted, AVG(InGameItemsCollected) AS AvgItemsCollected
         FROM Progress
-        GROUP BY LevelsCompleted;
+        GROUP BY LevelsCompleted
+        ORDER BY LevelsCompleted DESC;
     """
 
-    result = dbmanager.execute_query(cursor, sql_query)
-    dbmanager.print_db_output(result)
+    result = dbmanager.execute_query(cursor, sql_query, also_print=True)
 
     return result
 
@@ -52,14 +50,15 @@ def get_players_who_completed_quest(cursor, quest_id):
     """Function for getting all players who have completed a quest"""
 
     sql_query = """
-        SELECT P.Name, P.TotalPlaytimeHours
+        SELECT P.Username, P.TotalPlaytimeHours
         FROM Player P
-        JOIN Progress PR ON P.PlayerID = PR.PlayerID
-        WHERE PR.QuestCompleted = %s;
+        JOIN Player_Quest PQ 
+        ON P.PlayerID = PQ.PlayerID
+        WHERE PQ.QuestID = %s
+        AND PQ.CompletionDate IS NOT NULL;
     """
 
-    result = dbmanager.execute_query(cursor, sql_query, (quest_id,))
-    dbmanager.print_db_output(result)
+    result = dbmanager.execute_query(cursor, sql_query, (quest_id,), also_print=True)
 
     return result
 
@@ -68,7 +67,7 @@ def get_top_players(cursor):
     """Function for getting top 10 players with most achievements"""
 
     sql_query = """
-        SELECT P.Name, COUNT(PA.AchievementID) AS NumAchievements
+        SELECT P.Username, COUNT(PA.AchievementID) AS NumAchievements
         FROM Player P
         JOIN Player_Achievement PA ON P.PlayerID = PA.PlayerID
         GROUP BY P.PlayerID
@@ -76,7 +75,14 @@ def get_top_players(cursor):
         LIMIT 10;
     """
 
-    result = dbmanager.execute_query(cursor, sql_query)
-    dbmanager.print_db_output(result)
+    result = dbmanager.execute_query(cursor, sql_query, also_print=True)
+
+    return result
+
+
+def add_new_player(cursor, username):
+    """Function for adding a new player to the database"""
+
+    result = dbmanager.execute_procedure(cursor, "AddNewPlayer", (username,))
 
     return result

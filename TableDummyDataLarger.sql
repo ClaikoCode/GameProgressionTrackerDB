@@ -61,33 +61,34 @@ VALUES
     
     
 -- Generate data for Player table --
-INSERT INTO Player (Name, RegisterDate, TotalPlaytimeHours)
+INSERT INTO Player (Username, RegisterDate, TotalPlaytimeHours)
 VALUES
-    ("John Doe", '2023-02-01', 120),
-    ("Jane Smith", '2023-03-15', 80),
-    ("Michael Johnson", '2023-01-25', 200),
-    ("Emily Wilson", '2023-02-10', 150),
-    ("Daniel Brown", '2023-01-30', 90),
-    ("Olivia Davis", '2023-02-05', 180),
-    ("James Miller", '2023-02-20', 110),
-    ("Sophia Martinez", '2023-02-28', 70),
-    ("William Anderson", '2023-03-05', 140),
-    ("Ava Taylor", '2023-02-15', 100),
-    ("Liam Thomas", '2023-01-23', 160),
-    ("Isabella White", '2023-03-01', 130),
-    ("Benjamin Clark", '2023-03-10', 75),
-    ("Mia Rodriguez", '2023-02-08', 190),
-    ("Henry Lewis", '2023-03-18', 85),
-    ("Charlotte Turner", '2023-02-12', 170),
-    ("Alexander Walker", '2023-03-03', 105),
-    ("Amelia Hall", '2023-02-25', 65),
-    ("Daniel Green", '2023-03-08', 155),
-    ("Sophia Adams", '2023-02-18', 115),
-    ("Ethan King", '2023-01-27', 175),
-    ("Olivia Evans", '2023-02-23', 95),
-    ("Mason Murphy", '2023-03-13', 145),
-    ("Ava Scott", '2023-02-06', 75),
-    ("Jacob Lee", '2023-03-16', 125);
+    ("John Doe", '2023-02-01', 9),
+    ("Jane Smith", '2023-03-15', 11),
+    ("Michael Johnson", '2023-01-25', 6),
+    ("Emily Wilson", '2023-02-10', 8),
+    ("Daniel Brown", '2023-01-30', 12),
+    ("Olivia Davis", '2023-02-05', 5),
+    ("James Miller", '2023-02-20', 19),
+    ("Sophia Martinez", '2023-02-28', 10),
+    ("William Anderson", '2023-03-05', 7),
+    ("Ava Taylor", '2023-02-15', 3),
+    ("Liam Thomas", '2023-01-23', 13),
+    ("Isabella White", '2023-03-01', 2),
+    ("Benjamin Clark", '2023-03-10', 4),
+    ("Mia Rodriguez", '2023-02-08', 11),
+    ("Henry Lewis", '2023-03-18', 14),
+    ("Charlotte Turner", '2023-02-12', 6),
+    ("Alexander Walker", '2023-03-03', 9),
+    ("Amelia Hall", '2023-02-25', 7),
+    ("Daniel Green", '2023-03-08', 8),
+    ("Sophia Adams", '2023-02-18', 5),
+    ("Ethan King", '2023-01-27', 10),
+    ("Olivia Evans", '2023-02-23', 12),
+    ("Mason Murphy", '2023-03-13', 6),
+    ("Ava Scott", '2023-02-06', 9),
+    ("Jacob Lee", '2023-03-16', 4);
+
 
 -- Generate data for Achievement table --
 INSERT INTO Achievement (Name, Description)
@@ -119,33 +120,33 @@ VALUES
     ("Heroic Sacrifice", "Make a noble sacrifice to save others");
 
 -- Generate data for Progress table --
-INSERT INTO Progress (LevelsCompleted, InGameItemsCollected, ExperiencePointsEarned, GoldEarned, PlayerID)
+INSERT INTO Progress (LevelsCompleted, TotalPlaytimeHours, InGameItemsCollected, ExperiencePointsEarned, GoldEarned, PlayerID)
 VALUES
-    (15, 30, 5000, 10000, 1),
-    (8, 20, 3000, 8000, 2),
-    (20, 40, 8000, 15000, 3),
-    (12, 25, 4000, 9000, 4),
-    (10, 18, 3500, 7500, 5),
-    (18, 35, 7000, 12000, 6),
-    (14, 28, 4500, 9500, 7),
-    (7, 15, 2500, 6000, 8),
-    (16, 32, 5500, 11000, 9),
-    (11, 22, 3800, 8500, 10),
-    (19, 38, 7500, 13000, 11),
-    (13, 26, 4200, 10000, 12),
-    (9, 16, 3000, 7000, 13),
-    (17, 34, 6500, 11500, 14),
-    (6, 12, 2000, 5500, 15),
-    (21, 42, 8500, 16000, 16),
-    (14, 29, 4700, 10000, 17),
-    (8, 17, 3200, 7500, 18),
-    (18, 36, 7000, 13000, 19),
-    (12, 23, 4200, 9500, 20),
-    (10, 19, 3500, 8000, 21),
-    (16, 33, 6000, 11000, 22),
-    (7, 14, 2500, 6000, 23),
-    (20, 39, 8000, 15000, 24),
-    (13, 27, 4500, 9500, 25);
+    (15, 7, 30, 5000, 10000, 1),
+    (8, 6, 20, 3000, 8000, 2),
+    (20, 10, 40, 8000, 15000, 3),
+    (12, 9, 25, 4000, 9000, 4),
+    (10, 4, 18, 3500, 7500, 5),
+    (18, 9, 35, 7000, 12000, 6),
+    (14, 11, 28, 4500, 9500, 7),
+    (7, 5, 15, 2500, 6000, 8),
+    (16, 12, 32, 5500, 11000, 9),
+    (11, 13, 22, 3800, 8500, 10),
+    (19, 8, 38, 7500, 13000, 11),
+    (13, 9, 26, 4200, 10000, 12),
+    (9, 6, 16, 3000, 7000, 13),
+    (17, 11, 34, 6500, 11500, 14),
+    (6, 4, 12, 2000, 5500, 15),
+    (21, 19, 42, 8500, 16000, 16),
+    (14, 14, 29, 4700, 10000, 17),
+    (8, 3, 17, 3200, 7500, 18),
+    (18, 11, 36, 7000, 13000, 19),
+    (12, 8, 23, 4200, 9500, 20),
+    (10, 2, 19, 3500, 8000, 21),
+    (16, 11, 33, 6000, 11000, 22),
+    (7, 5, 14, 2500, 6000, 23),
+    (20, 11, 39, 8000, 15000, 24),
+    (13, 8, 27, 4500, 9500, 25);
     
 -- Generate data for Quest_NPC table --
 INSERT INTO Quest_NPC (QuestID, NPCID)

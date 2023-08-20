@@ -1,3 +1,4 @@
+CREATE DATABASE gameprogresstrackerdb;
 USE gameprogresstrackerdb;
 
 -- Record tables definitions --
@@ -20,9 +21,9 @@ CREATE TABLE NPC (
 
 CREATE TABLE Player (
 	PlayerID INT PRIMARY KEY AUTO_INCREMENT,
-    Name VARCHAR(64) NOT NULL,
+    Username VARCHAR(64) NOT NULL,
     RegisterDate DATE NOT NULL,
-    TotalPlaytimeHours INT
+    TotalPlaytimeHours INT DEFAULT 0
 );
 
 CREATE TABLE Achievement (
@@ -31,8 +32,10 @@ CREATE TABLE Achievement (
     Description TINYTEXT
 );
 
+-- This table is the individual progress of each character from a player. Maybe this should be renamed.
 CREATE TABLE Progress (
     ProgressID INT PRIMARY KEY AUTO_INCREMENT,
+    TotalPlaytimeHours INT DEFAULT 0,
     LevelsCompleted INT NOT NULL,
     InGameItemsCollected INT NOT NULL,
     ExperiencePointsEarned INT,
@@ -66,7 +69,7 @@ CREATE TABLE Quest_Prerequisite (
 CREATE TABLE Player_Quest (
     PlayerID INT,
     QuestID INT,
-    CompletionDate DATE,
+    CompletionDate DATE DEFAULT (CURDATE()),
     
     FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID),
     FOREIGN KEY (QuestID) REFERENCES Quest(QuestID),
@@ -76,9 +79,46 @@ CREATE TABLE Player_Quest (
 CREATE TABLE Player_Achievement (
     PlayerID INT,
     AchievementID INT,
-    AchievementDate DATE,
+    AchievementDate DATE DEFAULT (CURDATE()),
     
     FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID),
     FOREIGN KEY (AchievementID) REFERENCES Achievement(AchievementID),
     PRIMARY KEY AUTO_INCREMENT (PlayerID, AchievementID)
 );
+
+-- Trigger definitions
+
+DROP TRIGGER IF EXISTS update_playtime_after_progress_update;
+
+DELIMITER $$
+
+CREATE TRIGGER update_playtime_after_progress_update
+AFTER UPDATE ON Progress
+FOR EACH ROW
+BEGIN
+    IF NEW.TotalPlaytimeHours != OLD.TotalPlaytimeHours THEN
+        UPDATE Player
+        SET TotalPlaytimeHours = TotalPlaytimeHours + (NEW.TotalPlaytimeHours - OLD.TotalPlaytimeHours)
+        WHERE PlayerID = NEW.PlayerID;
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- Procedure definitions
+
+DROP PROCEDURE IF EXISTS AddNewPlayer;
+
+DELIMITER $$
+
+CREATE PROCEDURE AddNewPlayer(IN pUsername VARCHAR(255))
+BEGIN
+	IF NOT EXISTS (SELECT * FROM Player WHERE Username = pUsername) THEN
+		INSERT INTO Player (Username, RegisterDate) VALUES (pUsername, CURDATE());
+	ELSE
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'Username already exists.';
+	END IF;
+END$$
+
+DELIMITER ;

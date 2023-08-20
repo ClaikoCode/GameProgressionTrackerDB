@@ -3,9 +3,10 @@
 import dbmanager
 import prettyIO as pio
 import projectinitializer as projinit
+import projectinterface as projintf
 
 DATABASE_NAME = "gameprogresstrackerdb"
-DEBUGGING = True
+DEBUGGING = False
 
 
 def is_quit_command(command):
@@ -34,10 +35,10 @@ def handle_fake_command(cursor, argument):
     num_rows = arguments[1]
 
     # Generate the dummy data
-    dbmanager.generate_dummy_data(cursor, table_name, num_rows)
+    # dbmanager.generate_dummy_data(cursor, table_name, num_rows)
 
 
-def handle_settings(cursor, database, argument):
+def handle_settings_command(database, argument):
     """Function for handling settings command"""
 
     # Get first word of input (defined as command)
@@ -53,11 +54,78 @@ def handle_settings(cursor, database, argument):
             pio.print_error("Invalid boolean argument.")
 
 
-def handle_user_command(cursor, database, command, argument):
+def handle_help_command(argument):
+    """Function for handling help command"""
+
+    arguments = argument.split(" ")
+
+    if len(arguments) > 1:
+        pio.print_error("Invalid number of arguments for 'help' command (1 or less).")
+        return
+
+    if argument == "":
+        show_command_usages()
+
+    elif argument == "builtin":
+        show_builtin_command_usages()
+
+
+def handle_builtin_command(cursor, argument):
+    """Function for handling builtin command"""
+
+    arguments = argument.split(" ")
+
+    inner_command = arguments[0]
+    command_arguments = arguments[1:]
+
+    if inner_command == "player_achievements":
+        if len(command_arguments) < 1:
+            pio.print_error(
+                "Invalid number of arguments for 'player_achievements' command (1 required)."
+            )
+            return
+
+        player_id = command_arguments[0]
+        projintf.get_player_achievements(cursor, int(player_id))
+
+    elif inner_command == "total_playtime":
+        projintf.get_total_playtime(cursor)
+
+    elif inner_command == "avg_items_collected":
+        projintf.get_avg_items_collected(cursor)
+
+    elif inner_command == "players_who_completed_quest":
+        if len(command_arguments) < 1:
+            pio.print_error(
+                "Invalid number of arguments for 'players_who_completed_quest' command (1 required)."
+            )
+            return
+
+        quest_id = command_arguments[0]
+        projintf.get_players_who_completed_quest(cursor, int(quest_id))
+
+    elif inner_command == "top_players":
+        projintf.get_top_players(cursor)
+
+    elif inner_command == "add_new_player":
+        if len(command_arguments) < 1:
+            pio.print_error(
+                "Invalid number of arguments for 'add_new_player' command (1 required)."
+            )
+            return
+        
+        player_name = command_arguments[0]
+        projintf.add_new_player(cursor, player_name)
+
+    else:
+        pio.print_error("Invalid builtin command.")
+
+
+def handle_user_commands(cursor, database, command, argument):
     """Handle all user input"""
 
     if command == "help":
-        show_command_usages()
+        handle_help_command(argument)
 
     elif command == "commit":
         dbmanager.commit(database)
@@ -66,13 +134,13 @@ def handle_user_command(cursor, database, command, argument):
         dbmanager.rollback(database)
 
     elif command == "setting":
-        handle_settings(cursor, database, argument)
+        handle_settings_command(database, argument)
+
+    elif command == "builtin":
+        handle_builtin_command(cursor, argument)
 
     elif command == "query":
         handle_query_command(cursor, argument)
-
-    elif command == "fake":
-        handle_fake_command(cursor, argument)
 
     else:
         pio.pprint("Invalid command.")
@@ -80,8 +148,6 @@ def handle_user_command(cursor, database, command, argument):
 
 def show_command_usages():
     """Function for showing the command usages"""
-
-    command_print_style = "white"
 
     # Dict of commands and a pair of arguments and their descriptions
     command_usages = {
@@ -92,24 +158,46 @@ def show_command_usages():
             "Sets setting value.\nExample: 'setting autocommit on'",
         ),
         "query": ("[SQLQuery]", "Executes user typed SQL query and prints the output."),
-        "fake": (
-            "[TableName] [NumRows]",
-            "Generates given number of rows with dummy data into a table.",
+        "builtin": (
+            "[Command] [Arguments]",
+            "Executes a builtin command. See 'help builtin' for more info.",
         ),
-        "help": ("", "Shows the command usages."),
+        "help": (
+            "[Command]",
+            "Shows the command usages.\nSpecific command help: 'builtin'",
+        ),
         "(q)uit": ("", "Exits the program."),
     }
 
-    # Print the command usages with prettyprinter and style
-    pio.pprint("[bold underline]Commands:[/]", style=command_print_style)
-    for command, (arguments, description) in command_usages.items():
-        print("")
-        pio.pprint(
-            f"[bold]'{command}'[/] {arguments}\n{description}",
-            style=command_print_style,
-        )
+    pio.print_command_list(command_usages)
 
-    print("")
+
+def show_builtin_command_usages():
+    """Function for showing the builtin command usages"""
+
+    # Dict of commands and a pair of arguments and their descriptions
+    command_usages = {
+        "player_achievements": (
+            "[PlayerID]",
+            "Prints achievements for a given player.",
+        ),
+        "total_playtime": ("", "Prints the total playtime of all players combined."),
+        "avg_items_collected": (
+            "",
+            "Prints the average items collected per player in each level.",
+        ),
+        "players_who_completed_quest": (
+            "[QuestID]",
+            "Prints the players who have completed all quests.",
+        ),
+        "top_players": ("", "Prints the top 10 players with most achievements."),
+        "add_new_player": (
+            "[PlayerName]",
+            "Adds a new player with given name to the database through a stored procedure.",
+        ),
+    }
+
+    pio.print_command_list(command_usages)
 
 
 def get_user_command():
@@ -135,10 +223,6 @@ def run_app(database, cursor):
 
     pio.print_header("Game Progress Tracker Interface")
 
-    # dbmanager.execute_sql_file(
-    #    cursor, "E:/Skola/Åk 3/Databasteknik/Project/TableDummyData.sql"
-    # )
-
     # Main loop of the program
     run_program = True
     while run_program:
@@ -149,7 +233,7 @@ def run_app(database, cursor):
             run_program = False
             continue
 
-        handle_user_command(cursor, database, command, argument)
+        handle_user_commands(cursor, database, command, argument)
 
     pio.print_success("Application exited.\n")
 
@@ -158,6 +242,10 @@ def exit_program(database, cursor):
     """Function for exiting the program"""
 
     pio.print_info("Exiting program...")
+
+    # Commit changes to the database
+    if pio.get_yes_no_input("Commit changes to the database?"):
+        dbmanager.commit(database)
 
     # Set autocommit to false before closing the database connection
     dbmanager.set_auto_commit(database, False)
@@ -183,15 +271,18 @@ def main():
 
     pio.print_info("Starting program...")
 
+    database_cnx = None
+    cursor = None
+
     if DEBUGGING:
         database = dbmanager.connect_to_mysql_database("localhost", "root", "root")
-        result = (database, database.cursor(dictionary=True))
-        dbmanager.use_database(result[1], DATABASE_NAME)
+        (database_cnx, cursor) = (database, database.cursor(dictionary=True))
+        result = dbmanager.use_database(cursor, DATABASE_NAME)
     else:
         result = projinit.init()
+        (database_cnx, cursor) = result
 
     if result:
-        (database_cnx, cursor) = result
         run_app(database_cnx, cursor)
         exit_program(database_cnx, cursor)
     else:
